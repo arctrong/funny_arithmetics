@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<head><title>Funny arithmetic</title>
+<style>
+body, html {
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+input, input:focus {
+    outline: none;
+    border: none;
+}
+#problem, #result {
+    font-size: 70px;
+}
+button {
+    font-family: inherit;
+    font-size: 25px;
+    padding: 3px 10px;
+}
+#result {
+    font-family: inherit;
+    height:70px;
+    width:120px;
+    border-bottom: solid gray 2px;
+}
+.resultOk {
+    color: green;
+}
+.resultOk::after {
+    content: " ✅";
+}
+.resultWrong {
+/*    text-decoration: line-through; */
+    color: red;
+}
+.resultWrong::after {
+    content: " ❌";
+}
+.reactionOk, .reactionWrong {
+    font-size: 40px;
+}
+.reactionOk {
+    color: green;
+}
+.reactionWrong {
+    color: red;
+}
+</style>
+</head>
+<body>
+<p>
+<span style="font-size: 30px">😊</span> <span id="rightCount" style="font-size: 30px; color: green;"></span>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<span style="font-size: 30px">😞</span> <span id="wrongCount" style="font-size: 30px; color: red;"></span>
+</p>
+<p id="problem" style="margin: 50px;">
+<span id="num1"></span> <span id="op"></span> <span id="num2"></span> = 
+<input type="text" id="result" onkeypress="resultEnter();"/>
+</p>
+<p>
+<button type="button" onclick="check();" id="check">Проверить (Enter)</button>
+</p>
+
+<p><span id="reaction"></span></p>
+<p><span id="previous_task" style="font-size: 50px"></span><span
+id="previous_result" style="font-size: 50px"></span></p>
+
+
+<script>
+var ops = [["plus", "+", (n1, n2) => n1 + n2], ["minus", "−", (n1, n2) => n1 - n2], 
+    ["multiply", "\u22C5", (n1, n2) => n1 * n2], ["divide", ":", (n1, n2) => n1 / n2]]
+var num1 = 0
+var num2 = 0
+var op = []
+var rightCount = 0
+var wrongCount = 0
+
+var resultElement = document.getElementById("result")
+
+function fill() {
+    op = ops[getRandomInt(4)]
+    num2 = 1 + getRandomInt(9)
+    num1 = 0
+
+    if (op[0] == "minus") {
+        num1 = 10 + getRandomInt(10)
+    } else if (op[0] == "divide") {
+        num1 = (1 + getRandomInt(9)) * num2
+    } else if (op[0] == "plus") {
+        num1 = 10 + getRandomInt(10) - num2
+    } else {
+        num1 = 1 + getRandomInt(9)
+    }
+
+    document.getElementById("num1").innerText = num1
+    document.getElementById("num2").innerText = num2
+    
+    document.getElementById("op").innerText = op[1]
+    resultElement.value = ""
+    
+    updateScores()
+}
+
+function updateScores() {
+    document.getElementById("rightCount").innerText = rightCount
+    document.getElementById("wrongCount").innerText = wrongCount
+}
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max)
+}
+
+function resultEnter() {
+    if (event.key === "Enter") {
+        if (check()) {
+            fill()
+        }
+    }
+}
+
+function check() {
+    let resultStr = resultElement.value.trim()
+    
+    reactionElement = document.getElementById("reaction")
+    
+    if (resultStr.length < 1 || !isOnlyDigits(resultStr) || resultStr.length > 5) {
+        reactionElement.classList = ["reactionWrong"]
+        reactionElement.innerText = "Неправильное число! ☝️"
+        document.getElementById("result").select()
+        return false
+    }
+    
+    let result = parseInt(resultStr)
+    let expected = op[2](num1, num2)
+
+    document.getElementById("previous_task").innerText = num1 + " " + op[1] + " " + num2 + " = "
+    prevResultElement = document.getElementById("previous_result")
+    prevResultElement.innerText = result
+    if (result == expected) {
+        reactionElement.classList = ["reactionOk"]
+        reactionElement.innerText = "Молодец! 😊"
+        prevResultElement.classList = ["resultOk"]
+        rightCount++
+        updateScores()
+        return true
+    } else {
+        reactionElement.classList = ["reactionWrong"]
+        reactionElement.innerText = "Направильно, подумай еще! 😞"
+        prevResultElement.classList = ["resultWrong"]
+        wrongCount++
+        updateScores()
+        document.getElementById("result").select()
+        return false
+    }
+}
+
+function isOnlyDigits(string) {
+   for (let i = 0; i < string.length; i++) {
+      let ascii = string.charCodeAt(i)
+      if (ascii < 48 || ascii > 57) {
+         return false
+      }
+   }
+   return true
+}
+
+// document.getElementsByTagName("body")[0].onkeypress = function() {
+//     resultElement.dispatchEvent(event)
+// }
+
+fill()
+
+resultElement.select()
+
+</script>
+
+</body>
+</html>
