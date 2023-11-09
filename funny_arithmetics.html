@@ -7,6 +7,14 @@
 body, html {
   font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
+body {
+    padding: 15px;
+}
+
+.status {
+    font-size: 30px;
+}
+
 input, input:focus {
     outline: none;
     border: none;
@@ -51,9 +59,11 @@ button {
 </head>
 <body>
 <p>
-<span style="font-size: 30px">😊</span> <span id="rightCount" style="font-size: 30px; color: green;"></span>
+<span style="font-size: 30px">😊</span> <span id="rightCount" class="status" style="color: green;"></span>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<span style="font-size: 30px">😞</span> <span id="wrongCount" style="font-size: 30px; color: red;"></span>
+<span style="font-size: 30px">😞</span> <span id="wrongCount" class="status" style="color: red;"></span>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<span style="font-size: 30px">🕔</span> <span id="timeElapsed" class="status" style="color: grey;"></span>
 </p>
 <p id="problem" style="margin: 50px;">
 <span id="num1"></span> <span id="op"></span> <span id="num2"></span> = 
@@ -174,6 +184,36 @@ function isOnlyDigits(string) {
 fill()
 
 resultElement.select()
+
+var timeElapsedElement = document.getElementById('timeElapsed')
+var start = Date.now()
+setInterval(function() {
+    timeElapsedElement.innerHTML = convertDuration(Date.now() - start)
+}, 1000);
+
+
+function convertDuration(milliseconds) {
+    const seconds = Math.floor((milliseconds / 1000) % 60)
+    const minutes = Math.floor((milliseconds / 1000 / 60) % 60)
+    const hours = Math.floor((milliseconds / 1000 / 60 / 60))
+    
+    let formattedTime
+    
+    if (milliseconds < 60000) {
+        formattedTime = [minutes.toString().padStart(2, "0"), 
+            seconds.toString().padStart(2, "0")].join(":");
+    } else {
+        if (hours === 0) {
+            formattedTime = [minutes.toString(), 
+                seconds.toString().padStart(2, "0")].join(":");
+        } else {
+              formattedTime = [hours.toString(), minutes.toString().padStart(2, "0"), 
+                  seconds.toString().padStart(2, "0")].join(":");
+        }
+    }
+    return formattedTime;
+}
+
 
 </script>
 
