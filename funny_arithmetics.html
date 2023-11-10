@@ -11,12 +11,38 @@ body {
     padding: 15px;
 }
 
+p {
+    text-align: center;
+}
+
+div#hidingBlock {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    z-index: 2;
+    display: none;
+}
+
+.dialog {
+    margin-left: auto;
+    margin-right: auto;
+    width: max-content;
+    margin-top: 70px;
+    border: solid black 1px;
+    background-color: cornsilk;
+    border-radius: 20px;
+    padding: 30px;
+}
+
+div#confirmReloadDialog {
+    display: none;
+}
+
 div#content {
     margin-left: auto;
     margin-right: auto;
     width: max-content;
 }
-
 .status {
     font-size: 30px;
 }
@@ -63,11 +89,20 @@ button {
 </style>
 </head>
 <body>
+<div id="hidingBlock">
+    <div id="confirmReloadDialog" class="dialog">
+        <p id="confirmReloadDialogText">Закончить игру?</p>
+        <p>
+            <button type="button" onclick="confirmReloadDialogYes();">Да</button>
+            <button type="button" onclick="confirmReloadDialogNo();">Нет</button>
+        </p>
+    </div>
+</div>
 <div id="content">
 <p>
-<span style="font-size: 30px">😊</span> <span id="rightCount" class="status" style="color: green;"></span>
+<span style="font-size: 30px">😊</span> <span id="rightScore" class="status" style="color: green;"></span>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<span style="font-size: 30px">😞</span> <span id="wrongCount" class="status" style="color: red;"></span>
+<span style="font-size: 30px">😞</span> <span id="wrongScore" class="status" style="color: red;"></span>
 &nbsp;&nbsp;&nbsp;&nbsp;
 <span style="font-size: 30px">🕔</span> <span id="timeElapsed" class="status" style="color: grey;"></span>
 </p>
@@ -77,12 +112,12 @@ button {
 </p>
 <p>
 <button type="button" onclick="check();" id="check">Проверить (Enter)</button>
-<button type="button" onclick="location.reload();">Начать сначала (F5)</button>
+<button type="button" onclick="startGame();" id="startGame"></button>
 </p>
 
 <p><span id="reaction"></span></p>
-<p><span id="previous_task" style="font-size: 50px"></span><span
-id="previous_result" style="font-size: 50px"></span></p>
+<p><span id="previousTask" style="font-size: 50px"></span><span
+id="previousResult" style="font-size: 50px"></span></p>
 </div>
 
 <script>
@@ -91,12 +126,50 @@ var ops = [["plus", "+", (n1, n2) => n1 + n2], ["minus", "−", (n1, n2) => n1 -
 var num1 = 0
 var num2 = 0
 var op = []
-var rightCount = 0
-var wrongCount = 0
+var rightScore = 0
+var wrongScore = 0
 
 var resultElement = document.getElementById("result")
+var timeElapsedElement = document.getElementById('timeElapsed')
+var rightScoreElement = document.getElementById("rightScore")
+var wrongScoreElement = document.getElementById("wrongScore")
+var startGameElement = document.getElementById("startGame")
+var reactionElement = document.getElementById("reaction")
+var previousTaskElement = document.getElementById("previousTask")
+var previousResultElement = document.getElementById("previousResult")
+var confirmReloadDialogElement = document.getElementById("confirmReloadDialog")
+var hidingBlockElement = document.getElementById("hidingBlock")
+
+var state = "FREE_GAME"
+
+function renderState() {
+    if (state == "SCORE_GAME") {
+        startGameElement.innerText = "Закончить игру"
+        startGameElement.onclick = stopGame
+        window.addEventListener("beforeunload", beforeUnloadHandler)
+        startTimer()
+    } else {
+        startGameElement.innerText = "Начать игру"
+        startGameElement.onclick = startGame
+        window.removeEventListener("beforeunload", beforeUnloadHandler)
+    }
+    updateScores()
+    reactionElement.innerText = ""
+    previousTaskElement.innerText = ""
+    previousResultElement.innerText = ""
+    previousResultElement.classList = []
+    
+    fill()
+    resultElement.select()
+}
+
+function startGame() {
+    state = "SCORE_GAME"
+    renderState()
+}
 
 function fill() {
+
     op = ops[getRandomInt(4)]
     num2 = 1 + getRandomInt(9)
     num1 = 0
@@ -113,16 +186,19 @@ function fill() {
 
     document.getElementById("num1").innerText = num1
     document.getElementById("num2").innerText = num2
-    
     document.getElementById("op").innerText = op[1]
+        
+    if (state == "SCORE_GAME") {
+        updateScores()        
+    }
+
     resultElement.value = ""
-    
-    updateScores()
+    timeElapsedElement.innerHTML = convertDuration(0)
 }
 
 function updateScores() {
-    document.getElementById("rightCount").innerText = rightCount
-    document.getElementById("wrongCount").innerText = wrongCount
+    rightScoreElement.innerText = rightScore
+    wrongScoreElement.innerText = wrongScore
 }
 
 function getRandomInt(max) {
@@ -131,45 +207,51 @@ function getRandomInt(max) {
 
 function resultEnter() {
     if (event.key === "Enter") {
-        if (check()) {
-            fill()
-        }
+        check()
     }
 }
 
 function check() {
     let resultStr = resultElement.value.trim()
     
-    reactionElement = document.getElementById("reaction")
-    
     if (resultStr.length < 1 || !isOnlyDigits(resultStr) || resultStr.length > 5) {
         reactionElement.classList = ["reactionWrong"]
         reactionElement.innerText = "Неправильное число! ☝️"
-        document.getElementById("result").select()
+        resultElement.select()
         return false
     }
     
     let result = parseInt(resultStr)
     let expected = op[2](num1, num2)
 
-    document.getElementById("previous_task").innerText = num1 + " " + op[1] + " " + num2 + " = "
-    prevResultElement = document.getElementById("previous_result")
-    prevResultElement.innerText = result
+    previousTaskElement.innerText = num1 + " " + op[1] + " " + num2 + " = "
+    previousResultElement.innerText = result
+    
+    let resultIsRight = false
+    
     if (result == expected) {
         reactionElement.classList = ["reactionOk"]
         reactionElement.innerText = "Молодец! 😊"
-        prevResultElement.classList = ["resultOk"]
-        rightCount++
-        updateScores()
-        return true
+        previousResultElement.classList = ["resultOk"]
+        if (state == "SCORE_GAME") {
+            rightScore++
+        }
+        resultIsRight = true
     } else {
         reactionElement.classList = ["reactionWrong"]
-        reactionElement.innerText = "Направильно, подумай еще! 😞"
-        prevResultElement.classList = ["resultWrong"]
-        wrongCount++
+        reactionElement.innerText = "Подумай еще! 🤔"
+        previousResultElement.classList = ["resultWrong"]
+        if (state == "SCORE_GAME") {
+            wrongScore++
+        }
+        resultElement.select()
+    }
+    if (state == "SCORE_GAME") {
         updateScores()
-        document.getElementById("result").select()
-        return false
+    }
+    
+    if (resultIsRight) {
+        fill()
     }
 }
 
@@ -183,19 +265,14 @@ function isOnlyDigits(string) {
    return true
 }
 
-// document.getElementsByTagName("body")[0].onkeypress = function() {
-//     resultElement.dispatchEvent(event)
-// }
+var start
 
-fill()
-
-resultElement.select()
-
-var timeElapsedElement = document.getElementById('timeElapsed')
-var start = Date.now()
-setInterval(function() {
-    timeElapsedElement.innerHTML = convertDuration(Date.now() - start)
-}, 1000)
+function startTimer() {
+    start = Date.now()
+    setInterval(function() {
+        timeElapsedElement.innerHTML = convertDuration(Date.now() - start)
+    }, 1000)
+}
 
 function convertDuration(milliseconds) {
     const seconds = Math.floor((milliseconds / 1000) % 60)
@@ -213,6 +290,38 @@ function convertDuration(milliseconds) {
     }
     return formattedTime
 }
+
+function openDialog(dialogName) {
+    document.getElementById(dialogName).style.display = "block"
+    hidingBlockElement.style.display = "block"
+}
+
+function closeDialog(dialogName) {
+    document.getElementById(dialogName).style.display = "none"
+    hidingBlockElement.style.display = "none"
+}
+
+function stopGame() {
+    openDialog("confirmReloadDialog")
+}
+
+function beforeUnloadHandler(event) {
+    event.preventDefault()
+    event.returnValue = true
+    return ""
+}
+
+function confirmReloadDialogYes() {
+    window.removeEventListener("beforeunload", beforeUnloadHandler)
+    location.reload()
+}
+
+function confirmReloadDialogNo() {
+    closeDialog("confirmReloadDialog")
+    resultElement.select()
+}
+
+renderState()
 
 </script>
 
