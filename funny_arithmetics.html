@@ -22,7 +22,6 @@ div#hidingBlock {
     z-index: 2;
     display: none;
 }
-
 .dialog {
     margin-left: auto;
     margin-right: auto;
@@ -30,14 +29,14 @@ div#hidingBlock {
     margin-top: 70px;
     border: solid black 1px;
     background-color: cornsilk;
-    border-radius: 20px;
     padding: 30px;
 }
-
 div#confirmReloadDialog {
     display: none;
 }
-
+div#gameResultDialog {
+    display: none;
+}
 div#content {
     margin-left: auto;
     margin-right: auto;
@@ -45,6 +44,9 @@ div#content {
 }
 .status {
     font-size: 30px;
+}
+#gameDescription {
+    display: none;
 }
 input, input:focus {
     outline: none;
@@ -97,6 +99,17 @@ button {
             <button type="button" onclick="confirmReloadDialogNo();">Нет</button>
         </p>
     </div>
+    <div id="gameResultDialog" class="dialog">
+        <p id="confirmReloadDialogText">Вы решили примеров 
+        <span id="summaryTotal" style="color: green;"></span>
+        за время <span id="summaryTime" style="color: blue;"></span>, ошибочных ответов
+        <span id="summaryErrors" style="color: red;"></span>.
+        </p>
+        <p>
+            <button type="button" onclick="gameResultDialogClose();"
+            id="closeGameResultDialog">Закрыть</button>
+        </p>
+    </div>
 </div>
 <div id="content">
 <p>
@@ -105,6 +118,9 @@ button {
 <span style="font-size: 30px">😞</span> <span id="wrongScore" class="status" style="color: red;"></span>
 &nbsp;&nbsp;&nbsp;&nbsp;
 <span style="font-size: 30px">🕔</span> <span id="timeElapsed" class="status" style="color: grey;"></span>
+</p>
+<p id="gameDescription" class="status">Из <span id="totalTaskCount" style="color: blue;"></span>
+примеров осталось <span id="remainingTaskCount" style="color: blue;"></span>
 </p>
 <p id="problem" style="margin: 50px;">
 <span id="num1"></span> <span id="op"></span> <span id="num2"></span> = 
@@ -123,11 +139,14 @@ id="previousResult" style="font-size: 50px"></span></p>
 <script>
 var ops = [["plus", "+", (n1, n2) => n1 + n2], ["minus", "−", (n1, n2) => n1 - n2], 
     ["multiply", "\u22C5", (n1, n2) => n1 * n2], ["divide", ":", (n1, n2) => n1 / n2]]
+var gameTaskCount = 30
 var num1 = 0
 var num2 = 0
 var op = []
 var rightScore = 0
 var wrongScore = 0
+
+var gameTaskTotal = gameTaskCount
 
 var resultElement = document.getElementById("result")
 var timeElapsedElement = document.getElementById('timeElapsed')
@@ -139,28 +158,46 @@ var previousTaskElement = document.getElementById("previousTask")
 var previousResultElement = document.getElementById("previousResult")
 var confirmReloadDialogElement = document.getElementById("confirmReloadDialog")
 var hidingBlockElement = document.getElementById("hidingBlock")
+var gameDescriptionElement = document.getElementById("gameDescription")
+var totalTaskCountElement = document.getElementById("totalTaskCount")
+var remainingTaskCountElement = document.getElementById("remainingTaskCount")
+
+var summaryTotalElement = document.getElementById("summaryTotal")
+var summaryTimeElement = document.getElementById("summaryTime")
+var summaryErrorsElement = document.getElementById("summaryErrors")
 
 var state = "FREE_GAME"
 
+var timerId = null
+
 function renderState() {
+    timeElapsedElement.innerHTML = convertDuration(0)
     if (state == "SCORE_GAME") {
         startGameElement.innerText = "Закончить игру"
         startGameElement.onclick = stopGame
         window.addEventListener("beforeunload", beforeUnloadHandler)
+        gameTaskTotal = gameTaskCount
+        updateGameDescription()
+        gameDescriptionElement.style.display = "block"
         startTimer()
     } else {
         startGameElement.innerText = "Начать игру"
         startGameElement.onclick = startGame
         window.removeEventListener("beforeunload", beforeUnloadHandler)
+        gameDescriptionElement.style.display = "none"
     }
-    updateScores()
+    renderScores()
     reactionElement.innerText = ""
     previousTaskElement.innerText = ""
     previousResultElement.innerText = ""
     previousResultElement.classList = []
     
-    fill()
-    resultElement.select()
+    setNewTask()
+}
+
+function updateGameDescription() {
+    totalTaskCountElement.innerText = gameTaskTotal
+    remainingTaskCountElement.innerText = gameTaskTotal - rightScore
 }
 
 function startGame() {
@@ -168,7 +205,7 @@ function startGame() {
     renderState()
 }
 
-function fill() {
+function setNewTask() {
 
     op = ops[getRandomInt(4)]
     num2 = 1 + getRandomInt(9)
@@ -189,14 +226,15 @@ function fill() {
     document.getElementById("op").innerText = op[1]
         
     if (state == "SCORE_GAME") {
-        updateScores()        
+        renderScores()
+        updateGameDescription()
     }
 
     resultElement.value = ""
-    timeElapsedElement.innerHTML = convertDuration(0)
+    resultElement.select()
 }
 
-function updateScores() {
+function renderScores() {
     rightScoreElement.innerText = rightScore
     wrongScoreElement.innerText = wrongScore
 }
@@ -244,15 +282,30 @@ function check() {
         if (state == "SCORE_GAME") {
             wrongScore++
         }
+        gameTaskTotal++
         resultElement.select()
     }
     if (state == "SCORE_GAME") {
-        updateScores()
+        renderScores()
+        updateGameDescription()
+        if (gameTaskTotal == rightScore) {
+            finishGame()
+            return
+        }
     }
     
     if (resultIsRight) {
-        fill()
+        setNewTask()
     }
+}
+
+function finishGame() {
+    stopTimer()
+    summaryTotalElement.innerHTML = gameTaskTotal
+    summaryTimeElement.innerHTML = timeElapsedElement.innerHTML
+    summaryErrorsElement.innerHTML = wrongScore
+    openDialog("gameResultDialog")
+    document.getElementById("closeGameResultDialog").focus()
 }
 
 function isOnlyDigits(string) {
@@ -269,9 +322,13 @@ var start
 
 function startTimer() {
     start = Date.now()
-    setInterval(function() {
+    timerId = setInterval(function() {
         timeElapsedElement.innerHTML = convertDuration(Date.now() - start)
     }, 1000)
+}
+
+function stopTimer() {
+    clearInterval(timerId)
 }
 
 function convertDuration(milliseconds) {
@@ -319,6 +376,12 @@ function confirmReloadDialogYes() {
 function confirmReloadDialogNo() {
     closeDialog("confirmReloadDialog")
     resultElement.select()
+}
+
+function gameResultDialogClose() {
+    closeDialog("gameResultDialog")
+    window.removeEventListener("beforeunload", beforeUnloadHandler)
+    location.reload()
 }
 
 renderState()
