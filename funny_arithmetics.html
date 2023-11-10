@@ -68,6 +68,18 @@ input, input:focus {
     width:100px;
     border-bottom: solid gray 2px;
 }
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 .resultOk {
     color: green;
 }
@@ -93,6 +105,9 @@ input, input:focus {
 @media screen and (max-width: 640px) {
     html {
         font-size: 12px;
+    }
+    #result {
+        width: 70px;
     }
 }
 </style>
@@ -140,7 +155,7 @@ input, input:focus {
 </p>
 <p id="problemBlock">
 <span id="num1"></span> <span id="op"></span> <span id="num2"></span> = 
-<input type="text" id="result" onkeypress="resultEnter();"/>
+<input type="number" min="0" max="999" step="1" id="result" onkeypress="resultEnter();"/>
 </p>
 <p>
 <button type="button" onclick="check();" id="check">Проверить (Enter)</button>
