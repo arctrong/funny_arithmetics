@@ -4,6 +4,9 @@
 <!-- <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"> -->
 <head><title>Funny arithmetic</title>
 <style>
+html {
+    font-size: 18px;
+}
 body, html {
   font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 }
@@ -31,12 +34,10 @@ div#hidingBlock {
     background-color: cornsilk;
     padding: 30px;
 }
-div#confirmReloadDialog {
+div#confirmReloadDialog, div#gameTooLongDialog, div#gameResultDialog {
     display: none;
 }
-div#gameResultDialog {
-    display: none;
-}
+
 div#content {
     margin-left: auto;
     margin-right: auto;
@@ -110,6 +111,14 @@ button {
             id="closeGameResultDialog">Закрыть</button>
         </p>
     </div>
+    <div id="gameTooLongDialog" class="dialog">
+        <p id="confirmReloadDialogText">Игра длилась слишком долго.
+        </p>
+        <p>
+            <button type="button" onclick="gameTooLongDialogClose();"
+            id="closeGameResultDialog">Закрыть</button>
+        </p>
+    </div>
 </div>
 <div id="content">
 <p>
@@ -140,6 +149,7 @@ id="previousResult" style="font-size: 50px"></span></p>
 var ops = [["plus", "+", (n1, n2) => n1 + n2], ["minus", "−", (n1, n2) => n1 - n2], 
     ["multiply", "\u22C5", (n1, n2) => n1 * n2], ["divide", ":", (n1, n2) => n1 / n2]]
 var gameTaskCount = 30
+var gameTimeLimitMs = 3_600_000
 var num1 = 0
 var num2 = 0
 var op = []
@@ -323,7 +333,12 @@ var start
 function startTimer() {
     start = Date.now()
     timerId = setInterval(function() {
-        timeElapsedElement.innerHTML = convertDuration(Date.now() - start)
+        let duration = Date.now() - start
+        timeElapsedElement.innerHTML = convertDuration(duration)
+        if (duration > gameTimeLimitMs) {
+            stopTimer()
+            openDialog("gameTooLongDialog")
+        }
     }, 1000)
 }
 
@@ -380,6 +395,12 @@ function confirmReloadDialogNo() {
 
 function gameResultDialogClose() {
     closeDialog("gameResultDialog")
+    window.removeEventListener("beforeunload", beforeUnloadHandler)
+    location.reload()
+}
+
+function gameTooLongDialogClose() {
+    closeDialog("gameTooLongDialog")
     window.removeEventListener("beforeunload", beforeUnloadHandler)
     location.reload()
 }
