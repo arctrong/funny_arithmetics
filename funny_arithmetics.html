@@ -18,7 +18,6 @@ p {
 }
 button {
     font-family: inherit;
-    font-size: 1.56rem;
     padding: 3px 10px;
 }
 
@@ -30,7 +29,6 @@ div#hidingBlock {
     display: none;
 }
 .dialog {
-    font-size: 1.4rem;
     margin-left: auto;
     margin-right: auto;
     width: max-content;
@@ -50,10 +48,9 @@ div#content {
     width: max-content;
 }
 .status {
-    font-size: 1.88rem;
+    font-size: 1.5rem;
 }
 #gameDescription {
-    font-size: 1.6rem;
     display: none;
 }
 input, input:focus {
@@ -62,12 +59,11 @@ input, input:focus {
 }
 #problemBlock {
     margin: 35px;
-    font-size: 4.38rem;
+    font-size: 3.2rem;
 }
 #result {
     font-family: inherit;
     font-size: inherit;
-    height:70px;
     width:120px;
     border-bottom: solid gray 2px;
 }
@@ -84,7 +80,7 @@ input, input:focus {
     content: " ❌";
 }
 .reactionOk, .reactionWrong, .previousTaskBlock {
-    font-size: 2.3rem;
+    font-size: 1.2rem;
 }
 .reactionOk {
     color: green;
@@ -126,12 +122,12 @@ input, input:focus {
 <div id="content">
 <p class="status">
 <span>😊</span> <span id="rightScore" style="color: green;"></span>
-&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
 <span>😞</span> <span id="wrongScore" style="color: red;"></span>
-&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
 <span>🕔</span> <span id="timeElapsed" style="color: grey;"></span>
 </p>
-<p id="gameDescription" class="status">Из <span id="totalTaskCount" style="color: blue;"></span>
+<p id="gameDescription">Из <span id="totalTaskCount" style="color: blue;"></span>
 примеров осталось <span id="remainingTaskCount" style="color: blue;"></span>
 </p>
 <p id="problemBlock">
